@@ -17,6 +17,9 @@ load_dotenv()
 CHAT_HISTORY_LINE_LIMIT = int(os.getenv("CHAT_HISTORY_LINE_LIMIT"))
 STOP_SEQUENCES = os.getenv("STOP_SEQUENCES")
 
+# Check if SYSTEM_PROMPT is provided in .env, else put None
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT") or None
+
 # Replace escaped newline sequences with actual newline characters
 try:
     STOP_SEQUENCES = STOP_SEQUENCES.replace("\\n", "\n")
@@ -51,9 +54,10 @@ class Chatbot:
             self.world_scenario = data["world_scenario"]
             self.example_dialogue = data["example_dialogue"]
 
-        # initialize conversation history and character information
+        # initialize conversation history, character information and system prompt
         self.convo_filename = None
         self.conversation_history = ""
+        self.system_prompt = SYSTEM_PROMPT
 
         self.top_character_info = self.format_top_character_info()
 
@@ -61,7 +65,18 @@ class Chatbot:
         """
         This helper function formats the character_info string, including the optional parts only if they exist.
         """
-        info_str = f"Character: {self.char_name}\n{self.char_name}'s Persona: {self.char_persona}\n"
+        # Check self.system_prompt exists
+        if self.system_prompt:
+            # Format system prompt with character name and users if any
+            if "{{char}}" in self.system_prompt:
+                self.system_prompt = self.system_prompt.replace("{{char}}", self.char_name)
+            if "{{user}}" in self.system_prompt:
+                self.system_prompt = self.system_prompt.replace("{{user}}", "users")
+
+            info_str = f"{self.system_prompt}\n{self.char_name}'s Persona: {self.char_persona}\n"
+        else:
+            # Use standard PygmalionAI format if no system prompt provided (Pygmalion-6b only)
+            info_str = f"Character: {self.char_name}\n{self.char_name}'s Persona: {self.char_persona}\n"
 
         if self.world_scenario:  # Check if world_scenario exists
             info_str += f"Scenario: {self.world_scenario}\n"
