@@ -84,6 +84,9 @@ class Chatbot:
         if self.example_dialogue:  # Check if example_dialogue exists
             info_str += f"\nExample Dialogue:\n{self.example_dialogue}\n"
 
+        if self.system_prompt:
+            info_str += "\n### Response:\n"
+
         return info_str
 
     # if message starts with . or / then it is a command and should not be appended to the conversation history. do not use flatten use append

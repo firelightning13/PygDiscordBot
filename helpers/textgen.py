@@ -5,6 +5,8 @@ from typing import Any, Dict, Iterator, List, Optional
 import requests
 import asyncio
 import aiohttp
+import os
+from dotenv import load_dotenv
 
 from langchain.callbacks.manager import  (
     AsyncCallbackManagerForLLMRun,
@@ -15,7 +17,8 @@ from langchain.pydantic_v1 import Field
 from langchain.schema.output import GenerationChunk
 
 logger = logging.getLogger(__name__)
-
+load_dotenv()
+API_KEY = os.getenv("MANCER_API_KEY")
 
 class TextGen(LLM):
     """text-generation-webui models.
@@ -271,11 +274,15 @@ class TextGen(LLM):
             async with aiohttp.ClientSession() as session:
                 url = f"{self.model_url}/api/v1/generate"
                 params = self._get_parameters(stop)
+                params["stopping_strings"] = params.pop(
+                    "stop"
+                )  # Rename 'stop' to 'stopping_strings'
                 request = params.copy()
                 request["prompt"] = prompt
                 #response = requests.post(url, json=request)
 
-                async with session.post(url, json=request) as response:
+                headers = {"X-API-KEY": API_KEY} # Use Mancer's API key for authentication
+                async with session.post(url, json=request, headers=headers) as response:
                     if response.status == 200:
                         result = (await response.json())["results"][0]["text"]
                     else:
